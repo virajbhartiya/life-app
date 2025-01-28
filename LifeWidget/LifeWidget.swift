@@ -12,16 +12,19 @@ struct Provider: AppIntentTimelineProvider {
 
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
         var entries: [SimpleEntry] = []
-
         let currentDate = Date()
-        for hourOffset in 0..<24 {
-            let entryDate = Calendar.current.date(byAdding: .hour, value: hourOffset, to: currentDate)!
-            let entry = SimpleEntry(date: entryDate, configuration: configuration)
-            entries.append(entry)
+
+        // Generate entries for every minute in the next hour
+        for minuteOffset in 0..<60 {
+            if let entryDate = Calendar.current.date(byAdding: .minute, value: minuteOffset, to: currentDate) {
+                let entry = SimpleEntry(date: entryDate, configuration: configuration)
+                entries.append(entry)
+            }
         }
 
         return Timeline(entries: entries, policy: .atEnd)
     }
+
 }
 
 struct SimpleEntry: TimelineEntry {
@@ -36,8 +39,8 @@ struct LifeWidgetEntryView: View {
         let calendar = Calendar.current
         let currentHour = calendar.component(.hour, from: entry.date)
         let currentMinute = calendar.component(.minute, from: entry.date)
-        let hoursLeft = 23 - currentHour
-        let minutesLeft = 59 - currentMinute
+        let hoursLeft = 24 - currentHour
+        let minutesLeft = 60 - currentMinute
         let timeLeftText = "\(hoursLeft)h \(minutesLeft)m"
 
         VStack(alignment: .center, spacing: 12) {
@@ -51,16 +54,16 @@ struct LifeWidgetEntryView: View {
                                 .frame(width: 12, height: 12)
                         } else if hour == currentHour {
                             ZStack {
-                                Circle()
-                                    .fill(Color.red)
-                                    .frame(width: 12, height: 12)
+                                    Circle()
+                                        .stroke(Color.red, lineWidth: 1)
+                                        .frame(width: 12, height: 12)
 
-                                Circle()
-                                    .trim(from: CGFloat(currentMinute) / 60, to: 1)
-                                    .stroke(Color.black, lineWidth: 12) // Same size as the circle
-                                    .frame(width: 12, height: 12)
-                                    .rotationEffect(.degrees(-90))
-                            }
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(currentMinute) / 60)
+                                        .stroke(Color.black, lineWidth: 12) // Same size as the circle
+                                        .frame(width: 12, height: 12)
+                                        .rotationEffect(.degrees(-90))
+                                }
                         } else {
                             Circle()
                                 .fill(Color.red)
